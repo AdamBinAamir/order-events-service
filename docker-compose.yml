@@ -1,4 +1,6 @@
-# Local development infrastructure. Placeholder credentials only - do not reuse them anywhere real.
+# Local development stack. Placeholder credentials only - do not reuse them anywhere real.
+#   docker compose up -d db rabbitmq   -> just the infrastructure (run the apps with dotnet run)
+#   docker compose up --build          -> everything, API on http://localhost:8080
 services:
   db:
     image: postgres:16-alpine
@@ -24,3 +26,28 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Orders.Api/Dockerfile
+    environment:
+      ConnectionStrings__Orders: Host=db;Port=5432;Database=orders;Username=orders;Password=orders
+      ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - "8080:8080"
+    depends_on:
+      db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  worker:
+    build:
+      context: .
+      dockerfile: src/Orders.Worker/Dockerfile
+    environment:
+      ConnectionStrings__Orders: Host=db;Port=5432;Database=orders;Username=orders;Password=orders
+      ConnectionStrings__RabbitMq: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      db: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+      api: { condition: service_started } # the API applies the database migrations

@@ -1,0 +1,27 @@
+# The worker has no HTTP endpoint, so it has no probes; Kubernetes restarts it if the process exits.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-worker
+  labels: { app: orders-worker }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: orders-worker }
+  template:
+    metadata:
+      labels: { app: orders-worker }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: worker
+          image: orders-worker:local
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef: { name: orders-config }
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false

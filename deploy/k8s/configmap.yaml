@@ -1,0 +1,12 @@
+# Demo only: placeholder credentials in a ConfigMap. In a real cluster these belong in a Secret
+# (or an external secret store). See README "What I'd add next".
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orders-config
+data:
+  ConnectionStrings__Orders: "Host=postgres;Port=5432;Database=orders;Username=orders;Password=orders"
+  ConnectionStrings__RabbitMq: "amqp://guest:guest@rabbitmq:5672"
+  POSTGRES_DB: "orders"
+  POSTGRES_USER: "orders"
+  POSTGRES_PASSWORD: "orders"

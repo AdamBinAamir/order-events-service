@@ -1,0 +1,6 @@
+# kind create cluster --name orders --config deploy/kind/kind-config.yaml
+# Kept outside deploy/k8s so `kubectl apply -f deploy/k8s` only sees Kubernetes objects.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
