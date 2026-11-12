@@ -9,6 +9,7 @@ var connectionString = builder.Configuration.GetConnectionString("Orders")
     ?? throw new InvalidOperationException("Connection string 'Orders' is missing.");
 
 builder.Services.AddOrdersPersistence(connectionString);
+builder.Services.AddOutboxProcessor(options => builder.Configuration.GetSection("Outbox").Bind(options));
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 builder.Services.AddEndpointsApiExplorer();
