@@ -1,6 +1,22 @@
-@Orders.Api_HostAddress = http://localhost:5161
+﻿@host = http://localhost:5161
 
-GET {{Orders.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Place an order
+# @name place
+POST {{host}}/orders
+Content-Type: application/json
 
-###
+{
+  "customerId": "3f2504e0-4f89-11d3-9a0c-0305e82c3301",
+  "lines": [
+    { "productId": "6f9619ff-8b86-d011-b42d-00c04fc964ff", "quantity": 2, "unitPrice": 19.99, "currency": "EUR" }
+  ]
+}
+
+### Get the order
+GET {{host}}/orders/{{place.response.body.id}}
+
+### Confirm it
+POST {{host}}/orders/{{place.response.body.id}}/confirm
+
+### Cancel it
+POST {{host}}/orders/{{place.response.body.id}}/cancel
