@@ -7,8 +7,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("Orders")
     ?? throw new InvalidOperationException("Connection string 'Orders' is missing.");
+var rabbitMq = builder.Configuration.GetConnectionString("RabbitMq")
+    ?? throw new InvalidOperationException("Connection string 'RabbitMq' is missing.");
 
 builder.Services.AddOrdersPersistence(connectionString);
+builder.Services.AddRabbitMq(rabbitMq);
 builder.Services.AddOutboxProcessor(options => builder.Configuration.GetSection("Outbox").Bind(options));
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();

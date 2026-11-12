@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Orders.Domain.Common;
 using Orders.Domain.Orders;
+using Orders.Infrastructure.Inbox;
 using Orders.Infrastructure.Outbox;
 
 namespace Orders.Infrastructure.Persistence;
@@ -12,6 +13,9 @@ public sealed class OrdersDbContext(DbContextOptions<OrdersDbContext> options) :
 
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
+    /// <summary>Used by the worker to de-duplicate deliveries. In a larger system the consumer would own its own database.</summary>
+    public DbSet<ProcessedMessage> ProcessedMessages => Set<ProcessedMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(OrdersDbContext).Assembly);
