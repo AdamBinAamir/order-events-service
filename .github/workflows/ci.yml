@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      - name: Unit tests
+        run: dotnet test tests/Orders.Domain.Tests --no-build -c Release
+
+      - name: Integration tests (Testcontainers - Docker is available on the runner)
+        run: dotnet test tests/Orders.IntegrationTests --no-build -c Release
+
+  kubernetes-smoke-test:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images
+        run: |
+          docker build -f src/Orders.Api/Dockerfile -t orders-api:local .
+          docker build -f src/Orders.Worker/Dockerfile -t orders-worker:local .
+
+      - name: Install kind if missing
+        run: |
+          if ! command -v kind >/dev/null; then
+            curl -sLo kind https://kind.sigs.k8s.io/dl/v0.24.0/kind-linux-amd64
+            chmod +x kind && sudo mv kind /usr/local/bin/kind
+          fi
+          kind version
+
+      - name: Create cluster and load images
+        run: |
+          kind create cluster --name orders --config deploy/kind/kind-config.yaml --wait 120s
+          kind load docker-image orders-api:local orders-worker:local --name orders
+
+      - name: Deploy
+        run: |
+          kubectl apply -f deploy/k8s
+          for d in postgres rabbitmq orders-api orders-worker; do
+            kubectl rollout status deployment/$d --timeout=300s
+          done
+
+      - name: Place an order and check the worker log
+        run: bash deploy/smoke-test.sh
+
+      - name: Diagnostics
+        if: failure()
+        run: |
+          kubectl get pods -o wide
+          kubectl describe pods
+          kubectl logs deployment/orders-api --tail=100 || true
+          kubectl logs deployment/orders-worker --tail=100 || true

@@ -4,7 +4,9 @@ metadata:
   name: orders-api
   labels: { app: orders-api }
 spec:
-  replicas: 2 # the outbox uses FOR UPDATE SKIP LOCKED, so replicas do not publish the same row
+  # The API applies migrations on startup, so start with one replica. After that it can be scaled:
+  # the outbox uses FOR UPDATE SKIP LOCKED, so replicas never publish the same row at the same time.
+  replicas: 1
   selector:
     matchLabels: { app: orders-api }
   template:
